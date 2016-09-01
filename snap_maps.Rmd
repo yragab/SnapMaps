@@ -1,0 +1,61 @@
+---
+title: "Snap Maps"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Snap Maps
+
+### Prepare
+
+Load libraries
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+library(ggmap)
+library(dplyr)
+library(gridExtra)
+```
+
+Load the data
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+coord.data.frame = read.csv("Snap_Coordinates.csv")
+```
+
+Prepare data
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE}
+coord.data.frame = coord.data.frame %>% 
+  filter(Source != "MINDCONNECT") %>%
+  rename(case = X, source = Source, lon = Longitude, lat = Latitude)
+```
+
+## Plot Maps
+
+You can also embed plots, for example:
+
+```{r, echo = TRUE, warning = FALSE, message = FALSE, fig.width = 9, fig.height = 35}
+
+cases = unique(coord.data.frame$case)  
+
+plots = lapply(cases, function(x) {
+  current.data = coord.data.frame %>% filter(case == x)
+  map.center = (current.data %>% filter(source == "STREET") %>% select(lon, lat))[1,]
+  base.map = get_map(location = map.center, zoom = 17)
+  plot = ggmap(base.map) +
+    geom_point(data = current.data, aes(x = lon, y = lat, color = source, alpha = 0.8),
+               size = 3) +
+    ggtitle(x) +
+    theme(plot.margin = unit(c(2,0,0,0), "lines"), axis.title = element_blank(),
+          axis.line = element_blank(), axis.text = element_blank(),
+          axis.ticks = element_blank(), legend.position = "bottom", 
+          legend.title = element_blank(), legend.text = element_text(size = 6)) +
+    guides( alpha = FALSE)
+})
+
+do.call(grid.arrange, c(plots, nrow = ceiling(length(plots) / 3), ncol = 3, top = title))
+
+```
